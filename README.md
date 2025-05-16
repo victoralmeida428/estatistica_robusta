@@ -44,6 +44,6 @@ func main() {
 
 ## 📦 Instalação
 
-Como o projeto é em Go, basta incluí-lo como dependência no seu projeto. Certifique-se de importar corretamente o pacote (`robusto`) e disponibilizar o diretório `utils` se não estiver incluso no repositório.
+Como o projeto é em Go, basta incluí-lo como dependência no seu projeto. Certifique-se de importar corretamente o pacote (`robusto`)
 
 
