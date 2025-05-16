@@ -2,7 +2,7 @@ package robusto
 
 import (
 	"math"
-	"robusto/utils"
+	"github.com/victoralmeida428/estatistica_robusta/utils"
 	"slices"
 )
 

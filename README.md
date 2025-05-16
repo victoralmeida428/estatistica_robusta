@@ -30,7 +30,7 @@ package main
 
 import (
     "fmt"
-    "robusto"
+    "github.com/victoralmeida428/estatistica_robusta/robusto"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-module robusto
+module github.com/victoralmeida428/estatistica_robusta
 
 go 1.23
 
