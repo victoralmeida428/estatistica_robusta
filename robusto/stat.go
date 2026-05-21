@@ -21,7 +21,7 @@ func (s Statistics) getDiff(p int) []float64 {
 	return diff
 }
 
-func (s Statistics) Qn() (float64, float64) {
+func (s Statistics) Qn() (mean float64, std float64) {
 	p := len(s.data)
 	diff := s.getDiff(p)
 	if len(diff) == 1 {
@@ -55,11 +55,11 @@ func (s Statistics) Qn() (float64, float64) {
 		bp = 1 / (rp + 1)
 	}
 	
-	std := 2.21914 * dk * bp
+	std = 2.21914 * dk * bp
 	return s.hampelMean(std), std
 }
 
-func (s Statistics) QMethod() (float64, float64) {
+func (s Statistics) QMethod() (mean float64, std float64) {
 	p := len(s.data)
 	pf := float64(p)
 	diff := s.getDiff(p)
@@ -126,11 +126,11 @@ func (s Statistics) QMethod() (float64, float64) {
 	}
 	numerador := finalDiff[yIndex-1].diff + (finalDiff[yIndex].diff-finalDiff[yIndex-1].diff)/(finalDiff[yIndex].gx-finalDiff[yIndex-1].gx)*(y-finalDiff[yIndex-1].gx)
 	denominador := math.Sqrt(2) * utils.NormPPF(0.625+0.375*h0)
-	std := numerador / denominador
+	std = numerador / denominador
 	return s.hampelMean(std), std
 }
 
-func (s Statistics) recurrenceAlgorithmA(median, dam float64) (float64, float64) {
+func (s Statistics) recurrenceAlgorithmA(median, dam float64) (mean float64, std float64) {
 	sigma := 1.5 * dam
 	finalData := make([]float64, len(s.data))
 	
@@ -144,11 +144,11 @@ func (s Statistics) recurrenceAlgorithmA(median, dam float64) (float64, float64)
 		}
 	}
 	
-	mean := utils.Mean(finalData)
+	mean = utils.Mean(finalData)
 	return mean, utils.Std(finalData, &mean) * 1.134
 }
 
-func (s Statistics) AlgorithmA(iter bool) (float64, float64) {
+func (s Statistics) AlgorithmA(iter bool) (mean float64, std float64) {
 	
 	median := utils.Quantile(s.data, 0.5)
 	distMedian := make([]float64, len(s.data))
@@ -157,7 +157,7 @@ func (s Statistics) AlgorithmA(iter bool) (float64, float64) {
 	}
 	dam := 1.4826 * utils.Quantile(distMedian, 0.5)
 	
-	mean, std := s.recurrenceAlgorithmA(median, dam)
+	mean, std = s.recurrenceAlgorithmA(median, dam)
 	
 	if iter {
 		for i := 0; i < 100_000; i++ {
@@ -171,10 +171,10 @@ func (s Statistics) AlgorithmA(iter bool) (float64, float64) {
 		}
 	}
 	
-	return mean, std
+	return
 }
 
-func (s Statistics) Traditional() (float64, float64) {
+func (s Statistics) Traditional() (mean float64, std float64) {
 	q1 := utils.Quantile(s.data, 0.25)
 	q3 := utils.Quantile(s.data, 0.75)
 	iqr := q3 - q1
@@ -185,30 +185,30 @@ func (s Statistics) Traditional() (float64, float64) {
 		return value < cerca_inf || cerca_sup < value
 	})
 	
-	mean := utils.Mean(filtered)
-	std := utils.Std(filtered, &mean)
+	mean = utils.Mean(filtered)
+	std = utils.Std(filtered, &mean)
 	filtered = nil
 	return mean, std
 }
 
-func (s Statistics) DamN() (float64, float64) {
-	median := utils.Quantile(s.data, 0.5)
+func (s Statistics) DamN() (median float64, dam float64) {
+	median = utils.Quantile(s.data, 0.5)
 	aux := make([]float64, len(s.data))
 	for i := range aux {
 		aux[i] = math.Abs(s.data[i] - median)
 	}
 	mad := utils.Quantile(aux, 0.5)
-	dam := 1.4826 * mad
-	return median, dam
+	dam = 1.4826 * mad
+	return
 }
 
-func (s Statistics) NiQr() (float64, float64) {
-	median := utils.Quantile(s.data, 0.5)
+func (s Statistics) NiQr() (median float64, n_iqr float64) {
+	median = utils.Quantile(s.data, 0.5)
 	q1 := utils.Quantile(s.data, 0.25)
 	q3 := utils.Quantile(s.data, 0.75)
 	iqr := q3 - q1
-	n_iqr := iqr / 1.349
-	return median, n_iqr
+	n_iqr = iqr / 1.349
+	return
 }
 
 func (s *Statistics) SetData(data []float64) {
