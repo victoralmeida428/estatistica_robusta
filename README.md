@@ -7,6 +7,7 @@
 
 A biblioteca oferece múltiplos métodos robustos para estimativa de média e desvio padrão:
 
+- **Estimate** – Interface recomendada: média, desvio, incerteza `u(x*) = 1.25·s*/√p`, iterações e convergência, com erros tipados, para qualquer um dos métodos abaixo.
 - **Qn** – Estatística robusta baseada nas diferenças absolutas entre pares.
 - **Q Method** – Estimador robusto baseado em distribuições de diferenças, conforme descrito na norma ISO 13528 e trabalhos correlatos.
 - **Algorithm A** – Algoritmo iterativo robusto para exclusão e ajuste de valores extremos.
@@ -15,7 +16,6 @@ A biblioteca oferece múltiplos métodos robustos para estimativa de média e de
 - **NiQr** – Estimativa robusta baseada no IQR normalizado.
 - **HampelMean** – Média de Hampel (ISO 13528, C.5.3) para qualquer dispersão robusta (Q, Qn, MADe…).
 - **QReplicates** – Método Q entre laboratórios com mais de um resultado por laboratório.
-- **Estimate** – Média, desvio, incerteza `u(x*) = 1.25·s*/√p`, iterações e convergência, com erros tipados.
 - **Describe** – Estatísticas descritivas (quartis, moda, CV, MAD, nIQR, assimetria).
 - **KernelDensity / Bandwidth** – Densidade de kernel para inspeção de modas.
 - **Bootstrap** – Erro padrão bootstrap de qualquer estimador, reprodutível por semente.
@@ -31,11 +31,18 @@ O método **Q Method** implementado está baseado na definição matemática des
 
 ## 🚀 Como Usar
 
+`Estimate` é o jeito recomendado de calcular um estimador. Ele devolve a média,
+o desvio, a incerteza do valor designado e o diagnóstico de convergência, e
+avisa por erro tipado quando o resultado é degenerado.
+
 ```go
 package main
 
 import (
+    "errors"
     "fmt"
+    "log"
+
     "github.com/victoralmeida428/estatistica_robusta/robusto"
 )
 
@@ -43,22 +50,43 @@ func main() {
     data := []float64{10.0, 10.5, 9.8, 10.1, 100.0} // exemplo com outlier
     stats := robusto.New(data)
 
-    mean, std := stats.QMethod()
-    fmt.Printf("Média robusta (Q Method): %.3f\nDesvio padrão: %.3f\n", mean, std)
+    r, err := stats.Estimate(robusto.MethodQHampel)
+    switch {
+    case errors.Is(err, robusto.ErrTooFewValues): // menos de 2 valores
+        log.Fatal(err)
+    case errors.Is(err, robusto.ErrZeroScale): // s* = 0; r.Mean é a mediana
+    case errors.Is(err, robusto.ErrNotConverged): // r traz a última iteração
+    }
+
+    fmt.Printf("x* = %.3f  s* = %.3f  u(x*) = %.3f\n", r.Mean, r.SD, r.Uncertainty)
+    // x* = 10.100  s* = 0.666  u(x*) = 0.372
 }
 ```
 
-### Resultado completo e erros
+Para comparar todos os estimadores, percorra `robusto.Methods`:
 
 ```go
-stats := robusto.New(data)
-r, err := stats.Estimate(robusto.MethodQHampel)
-switch {
-case errors.Is(err, robusto.ErrTooFewValues): // menos de 2 valores
-case errors.Is(err, robusto.ErrZeroScale):    // s* = 0; r.Mean é a mediana
-case errors.Is(err, robusto.ErrNotConverged): // r traz a última iteração
+for _, m := range robusto.Methods {
+    r, err := stats.Estimate(m)
+    if err != nil {
+        fmt.Printf("%-12v %v\n", m, err)
+        continue
+    }
+    fmt.Printf("%-12v x* = %.4f  s* = %.4f  u = %.4f\n", m, r.Mean, r.SD, r.Uncertainty)
 }
-fmt.Println(r.Mean, r.SD, r.Uncertainty, r.Iterations)
+```
+
+### Atalhos
+
+Os métodos diretos devolvem só `(média, desvio)`, sem incerteza nem erros
+(NaN com menos de 2 valores). Use-os quando só precisar dos números, ou para
+o que o `Estimate` não cobre:
+
+```go
+mean, std := stats.QMethod()          // mesmo resultado de MethodQHampel
+mean, std = stats.AlgorithmA(false)   // um único passo, sem iterar
+mean = stats.HampelMean(sigmaPT)      // média de Hampel com dispersão externa
+outliers := stats.Outliers()          // valores fora das cercas de Tukey
 
 // Réplicas por laboratório
 sd, err := robusto.QReplicates(results, labs)
