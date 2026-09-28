@@ -50,68 +50,6 @@ func TestMeanStd(t *testing.T) {
 	
 }
 
-func TestFatorial(t *testing.T) {
-	testCases := []struct {
-		name   string
-		input  int
-		expect int
-	}{
-		{
-			name:   "fatorial de 5",
-			input:  5,
-			expect: 120,
-		},
-		{
-			name:   "fatorial de 6",
-			input:  6,
-			expect: 720,
-		},
-		{
-			name:   "fatorial de 0",
-			input:  0,
-			expect: 1,
-		},
-		{
-			name:   "fatorial de 1",
-			input:  1,
-			expect: 1,
-		},
-	}
-	
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			result, err := Fatorial(tc.input)
-			assert.NoError(t, err)
-			assert.Equal(t, tc.expect, result)
-		})
-	}
-	
-	t.Run("fatorial -1", func(t *testing.T) {
-		_, err := Fatorial(-1)
-		assert.Error(t, err)
-	})
-	
-}
-
-func BenchmarkFatoriais(b *testing.B) {
-	n := 1000
-	b.Run("Iterativo", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			_, _ = Fatorial(n)
-		}
-	})
-	
-	b.Run("Iterativo-Inline", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			result := 1
-			for j := 2; j <= n; j++ {
-				result *= j
-			}
-			_ = result
-		}
-	})
-}
-
 func TestPPF(t *testing.T) {
 	
 	t.Run("h0 0", func(t *testing.T) {

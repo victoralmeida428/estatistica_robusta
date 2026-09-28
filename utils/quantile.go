@@ -9,18 +9,26 @@ import (
 // Hyndman & Fan, 1996 — o método padrão do R e do numpy).
 //
 // Dado um vetor ordenado x[0..n-1] e uma probabilidade q em [0,1]:
-//   pos = q × (n-1)
-//   j = floor(pos), g = pos - j
-//   retorna (1 - g) × x[j] + g × x[j+1]
 //
-// Casos de borda: q = 0 retorna o mínimo, q = 1 retorna o máximo.
+//	pos = q × (n-1)
+//	j = floor(pos), g = pos - j
+//	retorna (1 - g) × x[j] + g × x[j+1]
+//
+// Casos de borda: q = 0 retorna o mínimo, q = 1 retorna o máximo e um vetor
+// vazio retorna NaN.
 func Quantile(data []float64, q float64) float64 {
-
-	sorted := make([]float64, len(data))
-	copy(sorted, data)
+	sorted := slices.Clone(data)
 	slices.Sort(sorted)
+	return QuantileSorted(sorted, q)
+}
 
+// QuantileSorted é igual a Quantile, mas assume que sorted já está em ordem
+// crescente, evitando a cópia e a ordenação a cada chamada.
+func QuantileSorted(sorted []float64, q float64) float64 {
 	n := len(sorted)
+	if n == 0 {
+		return math.NaN()
+	}
 	position := q * float64(n-1)
 	j := int(math.Floor(position))
 	g := position - float64(j)
